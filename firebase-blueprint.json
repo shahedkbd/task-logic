@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["Worker", "Buyer", "Admin"] },
+        "coin": { "type": "number" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["email", "role", "coin"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Task created by a buyer",
+      "type": "object",
+      "properties": {
+        "task_title": { "type": "string" },
+        "task_detail": { "type": "string" },
+        "required_workers": { "type": "number" },
+        "payable_amount": { "type": "number" },
+        "completion_date": { "type": "string" },
+        "submission_info": { "type": "string" },
+        "task_image_url": { "type": "string" },
+        "buyer_name": { "type": "string" },
+        "buyer_email": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["task_title", "buyer_email", "required_workers", "payable_amount"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Task submission by a worker",
+      "type": "object",
+      "properties": {
+        "task_id": { "type": "string" },
+        "task_title": { "type": "string" },
+        "payable_amount": { "type": "number" },
+        "worker_email": { "type": "string" },
+        "worker_name": { "type": "string" },
+        "buyer_name": { "type": "string" },
+        "buyer_email": { "type": "string" },
+        "submission_details": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["task_id", "worker_email", "buyer_email", "status"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "Withdrawal request by a worker",
+      "type": "object",
+      "properties": {
+        "worker_email": { "type": "string" },
+        "worker_name": { "type": "string" },
+        "withdrawal_coin": { "type": "number" },
+        "withdrawal_amount": { "type": "number" },
+        "payment_system": { "type": "string" },
+        "account_number": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["worker_email", "withdrawal_coin", "withdrawal_amount", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Notification for a user",
+      "type": "object",
+      "properties": {
+        "message": { "type": "string" },
+        "toEmail": { "type": "string" },
+        "actionRoute": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["message", "toEmail", "createdAt"]
+    },
+    "PaymentHistory": {
+      "title": "Payment History",
+      "description": "Records of coins purchased by buyers",
+      "type": "object",
+      "properties": {
+        "buyer_email": { "type": "string" },
+        "amount": { "type": "number" },
+        "coins": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["buyer_email", "amount", "coins", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles identified by email (encoded) or Firebase UID. Let's use UID since that's standard."
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Tasks listed on the platform"
+    },
+    "/submissions/{submissionId}": {
+      "schema": { "$ref": "#/entities/Submission" },
+      "description": "Submissions for tasks"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "#/entities/Withdrawal" },
+      "description": "Withdrawal requests"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User notifications via toEmail"
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/PaymentHistory" },
+      "description": "Records of Stripe payments"
+    }
+  }
+}

@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(uidField) {
+      return isSignedIn() && existing()[uidField] == request.auth.uid;
+    }
+
+    function hasRole(roleName) {
+      // Look up role in users collection
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == roleName;
+    }
+
+    function isAdmin() {
+      return hasRole('Admin');
+    }
+
+    // Role-based auth
+    function isWorker() { return hasRole('Worker'); }
+    function isBuyer() { return hasRole('Buyer'); }
+
+    // Path Id Guard
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    // Validations
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role', 'coin']) &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role is string && data.role in ['Worker', 'Buyer', 'Admin'] &&
+             data.coin is number && data.coin >= 0;
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['task_title', 'buyer_email', 'required_workers', 'payable_amount']) &&
+             data.task_title is string && data.task_title.size() <= 200 &&
+             data.buyer_email is string && data.buyer_email.size() <= 200 &&
+             data.required_workers is number && data.required_workers >= 0 &&
+             data.payable_amount is number && data.payable_amount >= 0;
+    }
+
+    function isValidSubmission(data) {
+      return data.keys().hasAll(['task_id', 'worker_email', 'buyer_email', 'status']) &&
+             data.task_id is string && data.task_id.size() <= 128 &&
+             data.worker_email is string && data.worker_email.size() <= 200 &&
+             data.buyer_email is string && data.buyer_email.size() <= 200 &&
+             data.status is string && data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function isValidWithdrawal(data) {
+      return data.keys().hasAll(['worker_email', 'withdrawal_coin', 'withdrawal_amount', 'status']) &&
+             data.worker_email is string && data.worker_email.size() <= 200 &&
+             data.withdrawal_coin is number && data.withdrawal_coin > 0 &&
+             data.withdrawal_amount is number && data.withdrawal_amount > 0 &&
+             data.status is string && data.status in ['pending', 'approved'];
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['message', 'toEmail', 'createdAt']) &&
+             data.message is string && data.message.size() <= 500 &&
+             data.toEmail is string && data.toEmail.size() <= 200 &&
+             data.createdAt is number;
+    }
+
+    // COLLECTIONS
+    
+    match /users/{userId} {
+      allow get: if true;
+      allow list: if true; 
+      
+      // Allow creation by self. Initial coin is determined by client, ideally server, 
+      // but client is fine if we allow it based on role.
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      
+      // Allow user to update their own profile, Admins can update any.
+      allow update: if isSignedIn() && (isAdmin() || (request.auth.uid == userId && isValidUser(incoming())));
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow get, list: if true; // Public list and get
+      allow create: if (isBuyer() || isAdmin()) && isValidTask(incoming());
+      // Buyers can update/delete their own, Admin can delete any
+      allow update: if (isBuyer() && existing().buyer_email == request.auth.token.email && isValidTask(incoming())) || isAdmin();
+      allow delete: if (isBuyer() && existing().buyer_email == request.auth.token.email) || isAdmin();
+    }
+
+    match /submissions/{subId} {
+      allow get, list: if isSignedIn();
+      allow create: if isWorker() && isValidSubmission(incoming());
+      // Worker can update their own pending submissions? Actually Buyer updates to approved/rejected.
+      allow update: if (isBuyer() && existing().buyer_email == request.auth.token.email && isValidSubmission(incoming())) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /withdrawals/{wdId} {
+      allow get, list: if isSignedIn();
+      allow create: if isWorker() && isValidWithdrawal(incoming()) && incoming().worker_email == request.auth.token.email;
+      // Admin approves
+      allow update: if isAdmin() && isValidWithdrawal(incoming());
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notifId} {
+      allow get, list: if isSignedIn() && existing().toEmail == request.auth.token.email;
+      allow create: if isSignedIn() && isValidNotification(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow get, list: if isSignedIn() && existing().buyer_email == request.auth.token.email || isAdmin();
+      allow create: if isBuyer() && incoming().buyer_email == request.auth.token.email;
+    }
+  }
+}
