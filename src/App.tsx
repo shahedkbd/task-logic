@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 // Layouts
@@ -35,13 +35,66 @@ import AuthPlaceholder from './components/AuthPlaceholder';
 // Protected Routes
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { doc, setDoc } from 'firebase/firestore';
+import { db, auth } from './lib/firebase';
 
 function DashboardIndex() {
-  const { userData } = useAuth();
+  const { user, userData, loading } = useAuth();
+  const navigate = useNavigate();
+
+  if (loading) return <div className="p-4">Loading dashboard...</div>;
+
   if (userData?.role === 'Worker') return <Navigate to="worker-home" replace />;
   if (userData?.role === 'Buyer') return <Navigate to="buyer-home" replace />;
   if (userData?.role === 'Admin') return <Navigate to="admin-home" replace />;
-  return <div className="p-4">Loading dashboard...</div>;
+
+  if (user && !userData) {
+    return (
+      <div className="p-10 flex flex-col items-center justify-center min-h-[60vh] text-center">
+        <h2 className="text-2xl font-bold mb-4">Profile Incomplete</h2>
+        <p className="text-gray-500 mb-6 max-w-md">
+          Your account was created with Firebase, but the database profile is missing. 
+          This can happen if registration was interrupted.
+        </p>
+        <div className="space-x-4">
+          <button 
+            className="bg-indigo-600 text-white font-bold tracking-widest uppercase text-xs px-6 py-3 rounded-xl shadow-lg hover:bg-indigo-700"
+            onClick={async () => {
+               const email = user.email || '';
+               const role = email === 'mdshahedulalamk@gmail.com' ? 'Admin' : 'Worker';
+               const coin = role === 'Worker' ? 10 : (role === 'Buyer' ? 50 : 0);
+               try {
+                 await setDoc(doc(db, 'users', user.uid), {
+                   displayName: user.displayName || 'User',
+                   email: email,
+                   photoURL: user.photoURL || '',
+                   role: role,
+                   coin: coin,
+                   createdAt: Date.now(),
+                   updatedAt: Date.now()
+                 });
+                 window.location.reload();
+               } catch(e: any) {
+                 alert('Could not create profile: ' + e.message);
+               }
+            }}
+          >
+            Create Worker Profile Now
+          </button>
+          <button 
+            className="bg-slate-200 text-slate-800 font-bold tracking-widest uppercase text-xs px-6 py-3 rounded-xl hover:bg-slate-300"
+            onClick={async () => {
+              await auth.signOut();
+            }}
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="p-4 flex justify-center"><div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full"></div></div>;
 }
 
 export default function App() {

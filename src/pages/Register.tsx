@@ -52,7 +52,7 @@ export default function Register() {
       if (error.code === 'auth/operation-not-allowed') {
         toast.error('Developer Alert: Please enable Email/Password Authentication in the Firebase Console for this project.');
       } else {
-        toast.error('Registration failed: ' + error.message);
+        toast.error('Registration failed (' + error.code + '): ' + error.message);
       }
     }
   };
@@ -83,8 +83,10 @@ export default function Register() {
     } catch (error: any) {
       if (error.code === 'auth/operation-not-allowed') {
         toast.error('Developer Alert: Please enable Google Authentication in the Firebase Console for this project.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        toast.error('Developer Alert: Please add this app URL to Valid OAuth domains in Firebase console.');
       } else {
-        toast.error('Google Sign In failed: ' + error.message);
+        toast.error('Google Sign In failed (' + error.code + '): ' + error.message);
       }
     }
   };
