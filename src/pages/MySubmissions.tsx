@@ -19,7 +19,7 @@ export default function MySubmissions() {
         );
         const snap = await getDocs(q);
         const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        fetched.sort((a, b) => b.createdAt - a.createdAt);
+        fetched.sort((a: any, b: any) => b.createdAt - a.createdAt);
         setSubmissions(fetched);
       } catch (err) {
         console.error(err);

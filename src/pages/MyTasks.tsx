@@ -14,7 +14,7 @@ export default function MyTasks() {
       const q = query(collection(db, 'tasks'), where('buyer_email', '==', userData.email));
       const snap = await getDocs(q);
       const fetchedTasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      fetchedTasks.sort((a, b) => b.completion_date.localeCompare(a.completion_date));
+      fetchedTasks.sort((a: any, b: any) => b.completion_date.localeCompare(a.completion_date));
       setTasks(fetchedTasks);
     } catch (err) {
       console.error(err);

@@ -49,7 +49,7 @@ function CheckoutForm({ amount, coins, onSuccess }: { amount: number, coins: num
       const clientSecret = data.clientSecret;
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement)!,
+          card: elements.getElement(CardElement) as any,
         }
       });
 

@@ -37,8 +37,9 @@ export default function AdminHome() {
       const wdQ = query(collection(db, 'withdrawals'), where('status', '==', 'pending'));
       const wdSnap = await getDocs(wdQ);
       setWithdrawals(wdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error('AdminHome Data Load Error: ' + err.message);
     }
   };
 

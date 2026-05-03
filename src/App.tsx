@@ -61,7 +61,7 @@ function DashboardIndex() {
             className="bg-indigo-600 text-white font-bold tracking-widest uppercase text-xs px-6 py-3 rounded-xl shadow-lg hover:bg-indigo-700"
             onClick={async () => {
                const email = user.email || '';
-               const role = email === 'mdshahedulalamk@gmail.com' ? 'Admin' : 'Worker';
+               const role: string = email === 'mdshahedulalamk@gmail.com' ? 'Admin' : 'Worker';
                const coin = role === 'Worker' ? 10 : (role === 'Buyer' ? 50 : 0);
                try {
                  await setDoc(doc(db, 'users', user.uid), {

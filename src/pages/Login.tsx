@@ -42,7 +42,7 @@ export default function Login() {
       const docSnap = await getDoc(userRef);
       if (!docSnap.exists()) {
         const userEmail = result.user.email || '';
-        const userRole = userEmail === 'mdshahedulalamk@gmail.com' ? 'Admin' : 'Worker';
+        const userRole: string = userEmail === 'mdshahedulalamk@gmail.com' ? 'Admin' : 'Worker';
         const coin = userRole === 'Worker' ? 10 : (userRole === 'Buyer' ? 50 : 0);
         
         const { setDoc } = await import('firebase/firestore');

@@ -121,13 +121,13 @@ service cloud.firestore {
     }
 
     match /notifications/{notifId} {
-      allow get, list: if isSignedIn() && existing().toEmail == request.auth.token.email;
+      allow get, list: if isAdmin() || (isSignedIn() && existing().toEmail == request.auth.token.email);
       allow create: if isSignedIn() && isValidNotification(incoming());
       allow update, delete: if isAdmin();
     }
 
     match /payments/{paymentId} {
-      allow get, list: if isSignedIn() && existing().buyer_email == request.auth.token.email || isAdmin();
+      allow get, list: if isAdmin() || (isSignedIn() && existing().buyer_email == request.auth.token.email);
       allow create: if isBuyer() && incoming().buyer_email == request.auth.token.email;
     }
   }

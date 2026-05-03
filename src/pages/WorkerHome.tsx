@@ -31,8 +31,9 @@ export default function WorkerHome() {
         
         setStats({ totalSubmissions: total, pending, earnings });
         setApprovedSubmissions(approved);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        import('react-hot-toast').then(m => m.default.error('WorkerHome Data Load Error: ' + err.message));
       }
     };
     fetchData();
